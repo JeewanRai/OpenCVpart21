@@ -334,6 +334,151 @@ while True:
             segments[marker_image_copy == (color_index)] = colors[color_index]
 
 cv2.destroyAllWindows()
-````
+```
 Output:                                         
 ![alt text](image-141.png)
+
+# Face Detection 
+Face detection using Haar Cascades --- key components of the Viola-Jones object detection framewor, concept of face detection analyzing a few key features.                     
+Main Features Types
+![alt text](image-142.png)
+![alt text](image-143.png)
+![alt text](image-144.png)
+Then we take average of the dark and lighter regions
+```Python
+Mean = 6.5/8 = 0.8125
+Mean = 1.2/8 = 0.15
+```
+Over all delat 
+```Python
+delta = 0.8125 - 0.15 = 0.6625
+```
+Closer we are to 1 better the actual features, decide threshold and throw away this features and say something like above 0.5 there is edge. Computing sums for the entire image would be computationally expensive, have to check every single possibiluty of every features.
+![alt text](image-146.png)
+In this image what its done is 31 is kept as it is, added 2 to 31 which is equal to 33, next have added 4 to make it 37 and so on helping quickly calculate the sum.
+Next whit it does is considering the different rectangles marked we take the right bottom corner value as reference of the value of the top left corner and this will helpt to compute very fast. 
+
+First need image that is looking at camera, convert the image to grayscale since we are only interested at intensity of light vs dark. Search for Haar Cascade Features. Will start first feature like eyes and cheek where eyes are more darker than cheek regions.
+![alt text](image-147.png)
+if it does not pass that means we dont have face and search for other thousand of features.
+![alt text](image-148.png)
+next we find another feature, bridge of the nose and keep going and going untill you we pass majority of the features.
+![alt text](image-149.png)
+The go fro detecting eyesbrows, mouth and so on until algorithm decides it has detected face.
+![alt text](image-150.png)
+
+# Face Detection with Python Code
+```Python
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+danis = cv2.imread('denis.jpeg', 0)
+
+nadia = cv2.imread('nadia.jpeg', 0)
+
+solvay = cv2.imread('Solvay_conference_1927.jpg', 0)
+
+plt.imshow(nadia)
+plt.imshow(danis)
+plt.imshow(solvay)
+```
+Output:                 
+![alt text](image-151.png)
+![alt text](image-152.png)
+![alt text](image-153.png)
+create classifier and pass xml classifier
+
+```Python
+face_cascad = cv2.CascadeClassifier('https://github.com/kipr/opencv/blob/master/data/haarcascades/haarcascade_frontalface_default.xml')
+
+def detect_fac(img):
+    fac_img = img.copy()
+
+    fac_rect = face_cascad.detectMultiScale(fac_img)
+    for (x, y, w, h) in fac_rect:
+        cv2.rectangle(fac_img, (x, y), (x+w, y+h), (255, 255, 255), 10)
+    return fac_img
+
+result = detect_fac(danis)
+plt.imshow(result, cmap='gray')
+
+result = detect_face(nadia)
+plt.imshow(result, cmap = 'gray')
+
+result = detect_face(solvay)
+plt.imshow(result, cmap = 'gray')
+```
+Output:                         
+![alt text](image-154.png)
+![alt text](image-155.png)
+![alt text](image-156.png)
+
+```Python
+def adj_detect_fac(img):
+    fac_img = img.copy()
+
+    fac_rect = face_cascad.detectMultiScale(fac_img, scaleFactor=1.2, minNeighbors=5)
+    for (x, y, w, h) in fac_rect:
+        cv2.rectangle(fac_img, (x, y), (x+w, y+h), (255, 255, 255), 10)
+    return fac_img
+
+result = adj_detect_face(solvay)
+plt.imshow(result, cmap = 'gray')
+```
+The extrace face detection or face that are turned off from camera is not detected.
+Output:                                     
+![alt text](image-157.png)
+
+```Python
+eye_cascade = cv2.CascadeClassifier('https://github.com/kipr/opencv/blob/master/data/haarcascades/haarcascade_eye.xml')
+
+def detect_eyes(img):
+    fac_img = img.copy()
+
+    eye_rect = eye_cascade.detectMultiScale(fac_img)
+    for (x, y, w, h) in eye_rect:
+        cv2.rectangle(fac_img, (x, y), (x+w, y+h), (255, 255, 255), 10)
+    return fac_img
+
+result = detect_eyes(nadia)
+plt.imshow(result, cmap='gray')
+```
+Detected eyes but also detect nostrial so have to adjust scalFactor and minNeighbour
+Output:       
+     ![alt text](image-158.png)                                 
+
+```Python
+def detect_eyes(img):
+    fac_img = img.copy()
+
+    eye_rect = eye_cascade.detectMultiScale(fac_img, scaleFactor=1.2, minNeighbors=5)
+    for (x, y, w, h) in eye_rect:
+        cv2.rectangle(fac_img, (x, y), (x+w, y+h), (255, 255, 255), 10)
+    return fac_img
+```
+Output:                                     
+![alt text](image-159.png)
+
+Image of the denis will not work since his eyes are all dark so cant capture 
+
+How we can capture using videos
+```Python
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    
+    frame = detect_fac(frame)
+
+    cv2.imshow("Video Face Detect", frame)
+
+    c = cv2.waitKey(1)
+    if k == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+Output:                                     
+![alt text](image-160.png)
